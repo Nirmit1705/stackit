@@ -24,6 +24,7 @@ interface RichTextEditorProps {
   placeholder?: string;
   theme?: 'light' | 'dark';
   minHeightPx?: number; // optional override
+  disabled?: boolean; // Add this prop
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ const RichTextEditor = forwardRef(
       placeholder = 'Write your content here…',
       theme = 'light',
       minHeightPx = 200,
+      disabled = false, // Add default value
     }: RichTextEditorProps,
     ref: Ref<ReactQuill>,
   ) => {
@@ -116,7 +118,7 @@ const RichTextEditor = forwardRef(
           theme === 'dark'
             ? 'border-gray-600 bg-gray-800'
             : 'border-gray-300 bg-white'
-        }`}
+        } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       >
         <ReactQuill
           ref={(node) => {
@@ -132,6 +134,7 @@ const RichTextEditor = forwardRef(
           theme="snow"
           className={containerClass}
           style={{ minHeight: minHeightPx }}
+          readOnly={disabled} // Add this prop
         />
       </div>
     );

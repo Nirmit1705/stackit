@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus } from 'lucide-react';
-import { mockQuestions } from '../data/mockData';
+import { questionsAPI, adminAPI } from '../services/api';
 import QuestionCard from './QuestionCard';
 import Pagination from './Pagination';
 import { Question } from '../types';
@@ -12,12 +12,15 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, user }) => {
-  const [questions, setQuestions] = useState<Question[]>(mockQuestions);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterOption, setFilterOption] = useState('Newest');
+  const [filterOption, setFilterOption] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [questionsPerPage, setQuestionsPerPage] = useState(5);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(0);
 
   // Update questions per page based on screen size
   useEffect(() => {
@@ -40,52 +43,112 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, u
     }
   }, [windowWidth]);
 
-  // Apply search and filter
-  const processedQuestions = useMemo(() => {
-    let result = questions;
+  // Fetch questions from API
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const params: any = {
+        page: currentPage,
+        limit: questionsPerPage,
+        sort: filterOption === 'newest' ? 'newest' : filterOption === 'unanswered' ? 'unanswered' : 'newest'
+      };
 
-    // Search
-    if (searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(q =>
-        q.title.toLowerCase().includes(query) ||
-        q.description.toLowerCase().includes(query)
-      );
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      const response = await questionsAPI.getQuestions(params);
+      
+      if (response.success) {
+        // Transform API response to match frontend types
+        const transformedQuestions = response.questions.map((q: any) => ({
+          id: q._id,
+          title: q.title,
+          description: q.description,
+          tags: q.tags,
+          username: q.author.username,
+          timestamp: formatTimestamp(q.createdAt),
+          upvotes: q.voteCount,
+          answers: [], // We'll load these on demand
+          isUserUpvoted: false,
+          isUserDownvoted: false
+        }));
+
+        setQuestions(transformedQuestions);
+        setTotalPages(response.pagination.totalPages);
+        setTotalQuestions(response.pagination.totalQuestions);
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error);
+      setQuestions([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Filter Option
-    switch (filterOption) {
-      case 'Unanswered':
-        result = result.filter(q => q.answers.length === 0);
-        break;
-      case 'Newest':
-      default:
-        // Assuming mock data is already ordered by newest first
-        break;
+  // Format timestamp
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
     }
+  };
 
-    return result;
-  }, [questions, searchQuery, filterOption]);
+  // Fetch questions when dependencies change
+  useEffect(() => {
+    fetchQuestions();
+  }, [currentPage, questionsPerPage, filterOption, searchQuery]);
 
   // Reset to first page when search or filter changes
   useEffect(() => {
-    setCurrentPage(1);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
   }, [searchQuery, filterOption]);
-
-  const totalPages = Math.ceil(processedQuestions.length / questionsPerPage);
-  const startIndex = (currentPage - 1) * questionsPerPage;
-  const endIndex = startIndex + questionsPerPage;
-  const currentQuestions = processedQuestions.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleDeleteQuestion = (questionId: string) => {
-    // In a real app, this would call an API
-    const updatedQuestions = questions.filter(q => q.id !== questionId);
-    setQuestions(updatedQuestions);
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!user.isLoggedIn || user.role !== 'admin') return;
+
+    try {
+      await adminAPI.deleteQuestion(questionId);
+      // Refresh questions after deletion
+      fetchQuestions();
+    } catch (error) {
+      console.error('Failed to delete question:', error);
+    }
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // The search will be triggered by the useEffect when searchQuery changes
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading questions...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -106,12 +169,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, u
           onChange={(e) => setFilterOption(e.target.value)}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
         >
-          <option>Newest</option>
-          <option>Unanswered</option>
+          <option value="newest">Newest</option>
+          <option value="unanswered">Unanswered</option>
+          <option value="votes">Most Voted</option>
         </select>
 
         {/* Search */}
-        <div className="relative flex-1">
+        <form onSubmit={handleSearch} className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
@@ -120,31 +184,56 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, u
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
           />
-        </div>
-      </div>
-      {/* Questions List */}
-      <div className="space-y-4 sm:space-y-6">
-        {currentQuestions.map((question) => (
-          <QuestionCard
-            key={question.id}
-            question={question}
-            onClick={() => onNavigateToQuestion(question.id)}
-            user={user}
-            onDelete={handleDeleteQuestion}  // Add this prop
-          />
-        ))}
+        </form>
       </div>
 
-      {/* Responsive Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-        totalItems={questions.length}
-        itemsPerPage={questionsPerPage}
-        startIndex={startIndex}
-        endIndex={endIndex}
-      />
+      {/* Questions List */}
+      {questions.length === 0 ? (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            {searchQuery ? 'No questions found' : 'No questions yet'}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {searchQuery 
+              ? 'Try adjusting your search terms or filters.' 
+              : 'Be the first to ask a question!'
+            }
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={() => onNavigate('ask')}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Ask Question
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="space-y-4 sm:space-y-6">
+            {questions.map((question) => (
+              <QuestionCard
+                key={question.id}
+                question={question}
+                onClick={() => onNavigateToQuestion(question.id)}
+                user={user}
+                onDelete={handleDeleteQuestion}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            totalItems={totalQuestions}
+            itemsPerPage={questionsPerPage}
+            startIndex={(currentPage - 1) * questionsPerPage}
+            endIndex={Math.min(currentPage * questionsPerPage, totalQuestions)}
+          />
+        </>
+      )}
     </div>
   );
 };

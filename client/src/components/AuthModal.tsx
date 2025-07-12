@@ -4,8 +4,8 @@ import { X, Eye, EyeOff } from 'lucide-react';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (username: string, password: string) => void;
-  onSignup: (username: string, email: string, password: string) => void;
+  onLogin: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  onSignup: (username: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignup }) => {
@@ -18,58 +18,74 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignu
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
+    setLoading(true);
 
     const newErrors: string[] = [];
 
-    if (!formData.username.trim()) {
-      newErrors.push('Username is required');
-    }
-
-    if (!formData.password.trim()) {
-      newErrors.push('Password is required');
-    }
-
-    if (!isLoginMode) {
+    if (isLoginMode) {
+      if (!formData.email.trim()) {
+        newErrors.push('Email is required');
+      }
+      if (!formData.password.trim()) {
+        newErrors.push('Password is required');
+      }
+    } else {
+      if (!formData.username.trim()) {
+        newErrors.push('Username is required');
+      }
       if (!formData.email.trim()) {
         newErrors.push('Email is required');
       } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
         newErrors.push('Email is invalid');
       }
-
+      if (!formData.password.trim()) {
+        newErrors.push('Password is required');
+      } else if (formData.password.length < 6) {
+        newErrors.push('Password must be at least 6 characters');
+      }
       if (formData.password !== formData.confirmPassword) {
         newErrors.push('Passwords do not match');
-      }
-
-      if (formData.password.length < 6) {
-        newErrors.push('Password must be at least 6 characters');
       }
     }
 
     if (newErrors.length > 0) {
       setErrors(newErrors);
+      setLoading(false);
       return;
     }
 
-    if (isLoginMode) {
-      onLogin(formData.username, formData.password);
-    } else {
-      onSignup(formData.username, formData.email, formData.password);
+    try {
+      let result;
+      if (isLoginMode) {
+        result = await onLogin(formData.email, formData.password);
+      } else {
+        result = await onSignup(formData.username, formData.email, formData.password);
+      }
+
+      if (result.success) {
+        // Reset form
+        setFormData({
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
+        });
+        onClose();
+      } else {
+        setErrors([result.message || 'Authentication failed']);
+      }
+    } catch (error) {
+      setErrors(['An unexpected error occurred']);
     }
 
-    // Reset form
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    });
-    onClose();
+    setLoading(false);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -108,37 +124,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignu
             </div>
           )}
 
-          {/* Username */}
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={formData.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              placeholder="Enter your username"
-            />
-          </div>
-
-          {/* Email (Sign up only) */}
+          {/* Username (Sign up only) */}
           {!isLoginMode && (
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Username
               </label>
               <input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                id="username"
+                type="text"
+                value={formData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                placeholder="Enter your email"
+                placeholder="Enter your username"
+                disabled={loading}
               />
             </div>
           )}
+
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              placeholder="Enter your email"
+              disabled={loading}
+            />
+          </div>
 
           {/* Password */}
           <div>
@@ -153,11 +171,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignu
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                 placeholder="Enter your password"
+                disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                disabled={loading}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -177,6 +197,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignu
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                 placeholder="Confirm your password"
+                disabled={loading}
               />
             </div>
           )}
@@ -184,9 +205,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignu
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            disabled={loading}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center justify-center"
           >
-            {isLoginMode ? 'Sign In' : 'Create Account'}
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                {isLoginMode ? 'Signing In...' : 'Creating Account...'}
+              </>
+            ) : (
+              isLoginMode ? 'Sign In' : 'Create Account'
+            )}
           </button>
 
           {/* Toggle Mode */}
@@ -206,6 +235,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onSignu
                   });
                 }}
                 className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                disabled={loading}
               >
                 {isLoginMode ? 'Sign up' : 'Sign in'}
               </button>

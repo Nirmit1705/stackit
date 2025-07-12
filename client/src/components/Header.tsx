@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, Menu, X, Sun, Moon, Plus, Settings } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { mockUser, mockNotifications } from '../data/mockData';
+import { mockNotifications } from '../data/mockData';
 import NotificationsDropdown from './NotificationsDropdown';
 import AuthModal from './AuthModal';
 import ProfileModal from './ProfileModal';
@@ -10,13 +10,13 @@ interface HeaderProps {
   currentPage: string;
   onNavigate: (page: string) => void;
   user: any;
-  onLogin: (username: string, password: string) => void;
-  onSignup: (username: string, email: string, password: string) => void;
+  onLogin: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  onSignup: (username: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   onLogout: () => void;
   onRoleChange: (role: 'user' | 'admin') => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin, onSignup, onLogout, onRoleChange }) => {
+const Header: React.FC<HeaderProps> = ({ onNavigate, user, onLogin, onSignup, onLogout, onRoleChange }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);

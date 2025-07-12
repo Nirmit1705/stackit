@@ -1,19 +1,52 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Header from './components/Header';
 import HomePage from './components/HomePage';
 import AskQuestionPage from './components/AskQuestionPage';
 import QuestionDetailPage from './components/QuestionDetailPage';
+import { authAPI, userAPI, getToken } from './services/api';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [user, setUser] = useState({
+    _id: '',
     username: '',
-    avatar: '',
+    email: '',
+    avatarUrl: '',
     isLoggedIn: false,
     role: 'user' as 'user' | 'admin'
   });
+  const [loading, setLoading] = useState(true);
+
+  // Check for existing authentication on app load
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const response = await userAPI.getProfile();
+          if (response.success) {
+            setUser({
+              _id: response.user._id,
+              username: response.user.username,
+              email: response.user.email,
+              avatarUrl: response.user.avatarUrl,
+              isLoggedIn: true,
+              role: response.user.role
+            });
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          // Token is invalid, remove it
+          authAPI.logout();
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -27,31 +60,65 @@ function App() {
     setCurrentPage('question');
   };
 
-  const handleLogin = (username: string, password: string) => {
-    setUser({
-      username,
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      isLoggedIn: true,
-      role: user.role // Preserve existing role
-    });
+  const handleLogin = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await authAPI.login(email, password);
+      if (response.success) {
+        setUser({
+          _id: response.user._id,
+          username: response.user.username,
+          email: response.user.email,
+          avatarUrl: response.user.avatarUrl,
+          isLoggedIn: true,
+          role: response.user.role
+        });
+        return { success: true };
+      }
+      return { success: false, message: 'Login failed' };
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Login failed. Please try again.' 
+      };
+    }
   };
 
-  const handleSignup = (username: string, email: string, password: string) => {
-    setUser({
-      username,
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      isLoggedIn: true,
-      role: user.role // Preserve existing role
-    });
+  const handleSignup = async (username: string, email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await authAPI.signup(username, email, password);
+      if (response.success) {
+        setUser({
+          _id: response.user._id,
+          username: response.user.username,
+          email: response.user.email,
+          avatarUrl: response.user.avatarUrl,
+          isLoggedIn: true,
+          role: response.user.role
+        });
+        return { success: true };
+      }
+      return { success: false, message: 'Signup failed' };
+    } catch (error: any) {
+      console.error('Signup failed:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Signup failed. Please try again.' 
+      };
+    }
   };
 
   const handleLogout = () => {
+    authAPI.logout();
     setUser({
+      _id: '',
       username: '',
-      avatar: '',
+      email: '',
+      avatarUrl: '',
       isLoggedIn: false,
-      role: 'user' // Reset to default role
+      role: 'user'
     });
+    setCurrentPage('home');
   };
 
   const handleRoleChange = (role: 'user' | 'admin') => {
@@ -72,7 +139,7 @@ function App() {
           />
         );
       case 'ask':
-        return <AskQuestionPage onNavigate={handleNavigate} />;
+        return <AskQuestionPage onNavigate={handleNavigate} user={user} />;
       case 'question':
         return selectedQuestionId ? (
           <QuestionDetailPage 
@@ -97,6 +164,19 @@ function App() {
         );
     }
   };
+
+  if (loading) {
+    return (
+      <ThemeProvider>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          </div>
+        </div>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider>

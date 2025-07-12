@@ -15,7 +15,6 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
   totalItems,
-  itemsPerPage,
   startIndex,
   endIndex
 }) => {
