@@ -9,15 +9,18 @@ interface AnswerCardProps {
   user: any;
   onAccept: (answerId: string) => void;
   onVote: (answerId: string, type: 'up' | 'down') => void;
+  onRequireLogin?: () => void;
 }
 
-const AnswerCard: React.FC<AnswerCardProps> = ({ answer, isQuestionOwner, user, onAccept, onVote }) => {
+const AnswerCard: React.FC<AnswerCardProps> = ({ answer, isQuestionOwner, user, onAccept, onVote, onRequireLogin }) => {
   const [isUserUpvoted, setIsUserUpvoted] = useState(answer.isUserUpvoted || false);
   const [isUserDownvoted, setIsUserDownvoted] = useState(answer.isUserDownvoted || false);
 
   const handleVote = (type: 'up' | 'down') => {
-    if (!user.isLoggedIn) return;
-
+    if (!user.isLoggedIn) {
+      if (typeof onRequireLogin === 'function') onRequireLogin();
+      return;
+    }
     if (type === 'up') {
       setIsUserUpvoted(!isUserUpvoted);
       if (isUserDownvoted) setIsUserDownvoted(false);
@@ -37,12 +40,11 @@ const AnswerCard: React.FC<AnswerCardProps> = ({ answer, isQuestionOwner, user, 
         <div className="flex flex-col items-center space-y-2 flex-shrink-0">
           <button
             onClick={() => handleVote('up')}
-            disabled={!user.isLoggedIn}
             className={`p-2 rounded-full transition-colors ${
               isUserUpvoted
                 ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-            } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
+            } ${!user.isLoggedIn ? 'cursor-pointer opacity-70' : ''}`}
             title={user.isLoggedIn ? 'Upvote' : 'Login to vote'}
           >
             <ArrowUp className="w-5 h-5" />
@@ -54,12 +56,11 @@ const AnswerCard: React.FC<AnswerCardProps> = ({ answer, isQuestionOwner, user, 
           
           <button
             onClick={() => handleVote('down')}
-            disabled={!user.isLoggedIn}
             className={`p-2 rounded-full transition-colors ${
               isUserDownvoted
                 ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-            } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
+            } ${!user.isLoggedIn ? 'cursor-pointer opacity-70' : ''}`}
             title={user.isLoggedIn ? 'Downvote' : 'Login to vote'}
           >
             <ArrowDown className="w-5 h-5" />

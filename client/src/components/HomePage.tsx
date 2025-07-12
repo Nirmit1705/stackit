@@ -45,21 +45,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, o
   const processedQuestions = useMemo(() => {
     let result = questions;
 
-    // Search with simple relevance score (title weight 3, tags 2, description 1)
+    // Search
     if (searchQuery.trim() !== '') {
-      const terms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-      const scored = result.map(q => {
-        let score = 0;
-        terms.forEach(t => {
-          if (q.title.toLowerCase().includes(t)) score += 3;
-          if (q.description.toLowerCase().includes(t)) score += 1;
-          if (q.tags?.some(tag => tag.toLowerCase().includes(t))) score += 2;
-        });
-        return { q, score };
-      }).filter(item => item.score > 0);
-
-      scored.sort((a, b) => b.score - a.score);
-      result = scored.map(item => item.q);
+      const query = searchQuery.toLowerCase();
+      result = result.filter(q =>
+        q.title.toLowerCase().includes(query) ||
+        q.description.toLowerCase().includes(query)
+      );
     }
 
     // Filter Option
