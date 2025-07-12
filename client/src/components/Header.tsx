@@ -99,7 +99,13 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
           <div className="flex flex-row w-full justify-between items-center gap-2 px-1">
             <div className="flex justify-start w-1/2 pr-1">
               <button
-                onClick={() => onNavigate('ask')}
+                onClick={() => {
+                  if (!user.isLoggedIn) {
+                    setIsAuthModalOpen(true);
+                  } else {
+                    onNavigate('ask');
+                  }
+                }}
                 className="border border-gray-400 rounded-lg px-2 py-1 text-blue-600 font-medium bg-white hover:bg-blue-50 transition-colors text-sm shadow-sm w-full max-w-[110px] min-w-[80px] min-h-[32px]"
               >
                 Ask New
@@ -123,7 +129,11 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
                       key={option}
                       className="w-full text-left px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm"
                       onClick={() => {
-                        setActiveTab(option);
+                        if (option === 'My Questions' && !user.isLoggedIn) {
+                          setIsAuthModalOpen(true);
+                        } else {
+                          setActiveTab(option);
+                        }
                         setMobileDropdownOpen(false);
                       }}
                     >
@@ -153,7 +163,13 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
           {/* Ask New Question */}
           <div className="flex items-center justify-start flex-shrink-0 w-full sm:w-auto">
             <button
-              onClick={() => onNavigate('ask')}
+              onClick={() => {
+                if (!user.isLoggedIn) {
+                  setIsAuthModalOpen(true);
+                } else {
+                  onNavigate('ask');
+                }
+              }}
               className="border border-gray-400 rounded-xl px-4 py-2 text-blue-600 font-medium bg-white hover:bg-blue-50 transition-colors text-base shadow-sm w-full sm:w-auto"
             >
               Ask New question
@@ -178,7 +194,11 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
                     key={option}
                     className="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-base"
                     onClick={() => {
-                      setActiveTab(option);
+                      if (option === 'My Questions' && !user.isLoggedIn) {
+                        setIsAuthModalOpen(true);
+                      } else {
+                        setActiveTab(option);
+                      }
                       setDesktopDropdownOpen(false);
                     }}
                   >

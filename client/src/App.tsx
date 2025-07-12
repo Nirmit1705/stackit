@@ -4,6 +4,7 @@ import Header from './components/Header';
 import HomePage from './components/HomePage';
 import AskQuestionPage from './components/AskQuestionPage';
 import QuestionDetailPage from './components/QuestionDetailPage';
+import AuthModal from './components/AuthModal';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -13,6 +14,7 @@ function App() {
     avatar: '',
     isLoggedIn: false
   });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -65,6 +67,7 @@ function App() {
             onNavigateToQuestion={handleNavigateToQuestion}
             onVoteQuestion={handleVoteQuestion}
             user={user}
+            onRequireLogin={() => setIsAuthModalOpen(true)}
           />
         );
       case 'ask':
@@ -75,12 +78,14 @@ function App() {
             questionId={selectedQuestionId} 
             onNavigate={handleNavigate} 
             user={user}
+            onRequireLogin={() => setIsAuthModalOpen(true)}
           />
         ) : (
           <HomePage 
             onNavigateToQuestion={handleNavigateToQuestion}
             onVoteQuestion={handleVoteQuestion}
             user={user}
+            onRequireLogin={() => setIsAuthModalOpen(true)}
           />
         );
       default:
@@ -89,6 +94,7 @@ function App() {
             onNavigateToQuestion={handleNavigateToQuestion}
             onVoteQuestion={handleVoteQuestion}
             user={user}
+            onRequireLogin={() => setIsAuthModalOpen(true)}
           />
         );
     }
@@ -109,6 +115,12 @@ function App() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {renderCurrentPage()}
         </main>
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
       </div>
     </ThemeProvider>
   );

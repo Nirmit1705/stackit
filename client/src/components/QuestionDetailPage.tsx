@@ -11,9 +11,10 @@ interface QuestionDetailPageProps {
   questionId: string;
   onNavigate: (page: string) => void;
   user: any;
+  onRequireLogin?: () => void;
 }
 
-const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onNavigate, user }) => {
+const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onNavigate, user, onRequireLogin }) => {
   const question = mockQuestions.find(q => q.id === questionId);
   const [answers, setAnswers] = useState<Answer[]>(question?.answers || []);
   const [newAnswerContent, setNewAnswerContent] = useState('');
@@ -93,13 +94,13 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
   };
 
   const handleQuestionVote = (voteType: 'up' | 'down') => {
-    if (!user.isLoggedIn) return;
-    
+    if (!user.isLoggedIn) {
+      if (typeof onRequireLogin === 'function') onRequireLogin();
+      return;
+    }
     if (questionVote === voteType) {
-      // If clicking the same vote, remove it
       setQuestionVote(null);
     } else {
-      // Set the new vote
       setQuestionVote(voteType);
     }
   };
@@ -138,12 +139,11 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
           <div className="flex flex-col items-center space-y-1 flex-shrink-0">
             <button
               onClick={() => handleQuestionVote('up')}
-              disabled={!user.isLoggedIn}
               className={`p-2 rounded transition-colors ${
                 questionVote === 'up'
                   ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-              } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
+              } ${!user.isLoggedIn ? 'cursor-pointer opacity-70' : ''}`}
               title={user.isLoggedIn ? 'Upvote' : 'Login to vote'}
             >
               <ArrowUp className="w-5 h-5" />
@@ -155,12 +155,11 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
 
             <button
               onClick={() => handleQuestionVote('down')}
-              disabled={!user.isLoggedIn}
               className={`p-2 rounded transition-colors ${
                 questionVote === 'down'
                   ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-              } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
+              } ${!user.isLoggedIn ? 'cursor-pointer opacity-70' : ''}`}
               title={user.isLoggedIn ? 'Downvote' : 'Login to vote'}
             >
               <ArrowDown className="w-5 h-5" />
@@ -219,6 +218,7 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
                   user={user}
                   onAccept={handleAcceptAnswer}
                   onVote={handleVoteAnswer}
+                  onRequireLogin={onRequireLogin}
                 />
               ))}
             </div>

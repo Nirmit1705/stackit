@@ -8,9 +8,10 @@ interface HomePageProps {
   onNavigateToQuestion: (questionId: string) => void;
   onVoteQuestion: (questionId: string, type: 'up' | 'down') => void;
   user: any;
+  onRequireLogin?: () => void;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onNavigateToQuestion, onVoteQuestion, user }) => {
+const HomePage: React.FC<HomePageProps> = ({ onNavigateToQuestion, onVoteQuestion, user, onRequireLogin }) => {
   const [questions] = useState<Question[]>(mockQuestions);
   const [currentPage, setCurrentPage] = useState(1);
   const [questionsPerPage, setQuestionsPerPage] = useState(5);
@@ -57,6 +58,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigateToQuestion, onVoteQuestio
             onClick={() => onNavigateToQuestion(question.id)}
             onVote={onVoteQuestion}
             user={user}
+            onRequireLogin={onRequireLogin}
           />
         ))}
       </div>

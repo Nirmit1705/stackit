@@ -7,6 +7,7 @@ interface QuestionCardProps {
   onClick: () => void;
   onVote: (questionId: string, type: 'up' | 'down') => void;
   user: any;
+  onRequireLogin?: () => void;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick }) => {
