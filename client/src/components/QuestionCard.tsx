@@ -1,5 +1,4 @@
 import React from 'react';
-import { MessageCircle } from 'lucide-react';
 import { Question } from '../types';
 
 interface QuestionCardProps {
@@ -17,13 +16,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick }) => {
 
   return (
     <div
-      className="relative bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-blue-400 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700 px-4 sm:px-7 py-4 sm:py-5 mb-6 sm:mb-7 flex flex-col transition-all duration-200 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer"
+      className="relative bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-400 border-t border-r border-b border-gray-200 dark:border-gray-700 px-4 sm:px-7 py-4 sm:py-5 mb-6 sm:mb-7 flex flex-col transition-all duration-200 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer"
       onClick={onClick}
     >
       {/* Top: Title, then Answer Count (stacked on mobile) */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
         <div className="flex flex-col flex-1 min-w-0">
-          <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 tracking-tight break-words">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1 sm:mb-2 tracking-tight break-words">
             {question.title}
           </h3>
           {/* On mobile, answer badge below title */}
@@ -53,7 +52,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick }) => {
           ))}
         </div>
         <div className="flex-1 min-w-0 w-full mt-1 sm:mt-0">
-          <p className="text-gray-700 dark:text-gray-200 text-sm sm:text-base leading-relaxed font-medium break-words">
+          <p className="text-gray-700 dark:text-gray-200 text-sm sm:text-base leading-relaxed font-normal break-words">
             {truncateText(question.description, 180)}
           </p>
         </div>

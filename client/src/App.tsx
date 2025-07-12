@@ -62,6 +62,7 @@ function App() {
       case 'home':
         return (
           <HomePage 
+            onNavigate={handleNavigate}
             onNavigateToQuestion={handleNavigateToQuestion}
             onVoteQuestion={handleVoteQuestion}
             user={user}
@@ -78,6 +79,7 @@ function App() {
           />
         ) : (
           <HomePage 
+            onNavigate={handleNavigate}
             onNavigateToQuestion={handleNavigateToQuestion}
             onVoteQuestion={handleVoteQuestion}
             user={user}
@@ -86,6 +88,7 @@ function App() {
       default:
         return (
           <HomePage 
+            onNavigate={handleNavigate}
             onNavigateToQuestion={handleNavigateToQuestion}
             onVoteQuestion={handleVoteQuestion}
             user={user}
