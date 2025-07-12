@@ -17,7 +17,7 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
   const question = mockQuestions.find(q => q.id === questionId);
   const [answers, setAnswers] = useState<Answer[]>(question?.answers || []);
   const [newAnswerContent, setNewAnswerContent] = useState('');
-  const [isQuestionUpvoted, setIsQuestionUpvoted] = useState(false);
+  const [questionVote, setQuestionVote] = useState<'up' | 'down' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [answersPerPage, setAnswersPerPage] = useState(3);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -92,9 +92,24 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
     console.log(`Vote ${type} on answer ${answerId}`);
   };
 
-  const handleQuestionVote = () => {
+  const handleQuestionVote = (voteType: 'up' | 'down') => {
     if (!user.isLoggedIn) return;
-    setIsQuestionUpvoted(!isQuestionUpvoted);
+    
+    if (questionVote === voteType) {
+      // If clicking the same vote, remove it
+      setQuestionVote(null);
+    } else {
+      // Set the new vote
+      setQuestionVote(voteType);
+    }
+  };
+
+  // Calculate vote count
+  const getVoteCount = () => {
+    let count = question.upvotes;
+    if (questionVote === 'up') count += 1;
+    if (questionVote === 'down') count -= 1;
+    return count;
   };
 
   // Pagination for answers
@@ -120,23 +135,36 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
         <div className="flex gap-6">
           {/* Question Voting */}
-          <div className="flex flex-col items-center space-y-2 flex-shrink-0">
+          <div className="flex flex-col items-center space-y-1 flex-shrink-0">
             <button
-              onClick={handleQuestionVote}
+              onClick={() => handleQuestionVote('up')}
               disabled={!user.isLoggedIn}
-              className={`p-3 rounded-full transition-colors ${
-                isQuestionUpvoted
+              className={`p-2 rounded transition-colors ${
+                questionVote === 'up'
                   ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
               } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
               title={user.isLoggedIn ? 'Upvote' : 'Login to vote'}
             >
-              <ArrowUp className="w-6 h-6" />
+              <ArrowUp className="w-5 h-5" />
             </button>
             
-            <span className="font-bold text-xl text-gray-900 dark:text-gray-100">
-              {question.upvotes + (isQuestionUpvoted ? 1 : 0)}
+            <span className="font-bold text-lg text-gray-900 dark:text-gray-100 py-1">
+              {getVoteCount()}
             </span>
+
+            <button
+              onClick={() => handleQuestionVote('down')}
+              disabled={!user.isLoggedIn}
+              className={`p-2 rounded transition-colors ${
+                questionVote === 'down'
+                  ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
+              } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
+              title={user.isLoggedIn ? 'Downvote' : 'Login to vote'}
+            >
+              <ArrowDown className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Question Content */}
@@ -171,30 +199,6 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Downvote Button for Question */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-8">
-        <div className="flex items-center justify-center">
-          <button
-            onClick={() => {
-              if (user.isLoggedIn) {
-                // Handle downvote logic
-                console.log('Downvote question');
-              }
-            }}
-            disabled={!user.isLoggedIn}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              !user.isLoggedIn 
-                ? 'cursor-not-allowed opacity-50 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                : 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400'
-            }`}
-            title={user.isLoggedIn ? 'Downvote question' : 'Login to vote'}
-          >
-            <ArrowDown className="w-5 h-5" />
-            <span className="text-sm font-medium">Downvote Question</span>
-          </button>
         </div>
       </div>
 
