@@ -80,7 +80,7 @@ const AskQuestionPage: React.FC<AskQuestionPageProps> = ({ onNavigate }) => {
               value={description}
               onChange={setDescription}
               placeholder="Provide more details about your question. Include what you've tried and what you're expecting to happen."
-              minHeight="min-h-64"
+              minHeightPx={256}
             />
           </div>
 

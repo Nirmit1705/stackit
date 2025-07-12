@@ -1,275 +1,141 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Bold,
-  Italic,
-  Strikethrough,
-  List,
-  ListOrdered,
-  Smile,
-  Link,
-  Image,
-  AlignLeft,
-  AlignCenter,
-  AlignRight
-} from 'lucide-react';
+import React, {
+  useMemo,
+  useCallback,
+  useRef,
+  forwardRef,
+  Ref,
+} from 'react';
+import axios from 'axios';
+import ReactQuill, { ReactQuillProps } from 'react-quill';
+// Quill core already bundled with react-quill; explicit import not needed after emoji side-effect registration
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+import 'react-quill/dist/quill.snow.css';
+import 'quill-emoji/dist/quill-emoji.css';
+import '../styles/rich-text-editor.css';
+
+// ─── Emoji Module Registration ───────────────────────────────────────────────
+import 'quill-emoji/dist/quill-emoji.js'; // registers EmojiBlot and modules automatically
+
+// ─── Component Props ─────────────────────────────────────────────────────────
 interface RichTextEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (val: string) => void;
   placeholder?: string;
-  minHeight?: string;
+  theme?: 'light' | 'dark';
+  minHeightPx?: number; // optional override
 }
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
-  value,
-  onChange,
-  placeholder = 'Write your content here...',
-  minHeight = 'min-h-48'
-}) => {
-  const [showLinkInput, setShowLinkInput] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('');
-  const editorRef = useRef<HTMLDivElement>(null);
+// ─── Main Component ──────────────────────────────────────────────────────────
+const RichTextEditor = forwardRef(
+  (
+    {
+      value,
+      onChange,
+      placeholder = 'Write your content here…',
+      theme = 'light',
+      minHeightPx = 200,
+    }: RichTextEditorProps,
+    ref: Ref<ReactQuill>,
+  ) => {
+    const quillRef = useRef<ReactQuill | null>(null);
 
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
-    }
-  }, [value]);
+    // image upload handler ----------------------------------------------------
+    const handleImageUpload = useCallback(async () => {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
 
-  const execCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
+      input.onchange = async () => {
+        if (!input.files?.length) return;
 
-  const insertLink = () => {
-    if (linkUrl && editorRef.current) {
-      editorRef.current.focus();
-      execCommand('createLink', linkUrl);
-      setLinkUrl('');
-      setShowLinkInput(false);
-    }
-  };
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
 
-  const insertEmoji = (emoji: string) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      execCommand('insertText', emoji);
-    }
-  };
+        try {
+          const { data } = await axios.post<{ imageUrl: string }>(
+            '/api/uploads/image',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+          );
 
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
+          const quill = quillRef.current?.getEditor();
+          const range = quill?.getSelection(true);
+          if (quill && range) {
+            quill.insertEmbed(range.index, 'image', data.imageUrl, 'user');
+          }
+        } catch (err) {
+          console.error('Image upload failed ↠', err);
+        }
+      };
+    }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Handle keyboard shortcuts
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 'b':
-          e.preventDefault();
-          execCommand('bold');
-          break;
-        case 'i':
-          e.preventDefault();
-          execCommand('italic');
-          break;
-        case 'u':
-          e.preventDefault();
-          execCommand('underline');
-          break;
-      }
-    }
-  };
+    // quill modules ----------------------------------------------------------
+    const modules: ReactQuillProps['modules'] = useMemo(
+      () => ({
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'strike'], // formatting
+            [{ list: 'bullet' }, { list: 'ordered' }],
+            ['link'],
+            [{ align: '' }, { align: 'center' }, { align: 'right' }],
+            ['emoji'],
+            ['image'],
+          ],
+          handlers: { image: handleImageUpload },
+        },
+        'emoji-toolbar': true,
+        'emoji-shortname': true,
+      }),
+      [handleImageUpload],
+    );
 
-  return (
-    <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
-        {/* Text Formatting */}
-        <div className="flex items-center gap-1 pr-3 border-r border-gray-300 dark:border-gray-600">
-          <button
-            type="button"
-            onClick={() => execCommand('bold')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Bold (Ctrl+B)"
-          >
-            <Bold className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-          <button
-            type="button"
-            onClick={() => execCommand('italic')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Italic (Ctrl+I)"
-          >
-            <Italic className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-          <button
-            type="button"
-            onClick={() => execCommand('strikeThrough')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Strikethrough"
-          >
-            <Strikethrough className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-        </div>
+    // allowed formats to preserve -------------------------------------------
+    const formats = [
+      'bold',
+      'italic',
+      'strike',
+      'list',
+      'bullet',
+      'link',
+      'align',
+      'emoji',
+      'image',
+    ];
 
-        {/* Lists */}
-        <div className="flex items-center gap-1 pr-3 border-r border-gray-300 dark:border-gray-600">
-          <button
-            type="button"
-            onClick={() => execCommand('insertOrderedList')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Numbered List"
-          >
-            <ListOrdered className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-          <button
-            type="button"
-            onClick={() => execCommand('insertUnorderedList')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Bullet List"
-          >
-            <List className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-        </div>
+    // dynamic theming --------------------------------------------------------
+    const containerClass =
+      theme === 'dark'
+        ? 'ql-editor dark:text-gray-100 dark:bg-gray-800'
+        : 'ql-editor';
 
-        {/* Alignment */}
-        <div className="flex items-center gap-1 pr-3 border-r border-gray-300 dark:border-gray-600">
-          <button
-            type="button"
-            onClick={() => execCommand('justifyLeft')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Align Left"
-          >
-            <AlignLeft className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-          <button
-            type="button"
-            onClick={() => execCommand('justifyCenter')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Align Center"
-          >
-            <AlignCenter className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-          <button
-            type="button"
-            onClick={() => execCommand('justifyRight')}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Align Right"
-          >
-            <AlignRight className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-        </div>
-
-        {/* Link and Image */}
-        <div className="flex items-center gap-1 pr-3 border-r border-gray-300 dark:border-gray-600">
-          <button
-            type="button"
-            onClick={() => setShowLinkInput(!showLinkInput)}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Insert Link"
-          >
-            <Link className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const url = prompt('Enter image URL:');
-              if (url) execCommand('insertImage', url);
-            }}
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            title="Insert Image"
-          >
-            <Image className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          </button>
-        </div>
-
-        {/* Emoji */}
-        <div className="flex items-center gap-1">
-          <div className="relative">
-            <button
-              type="button"
-              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors group"
-              title="Insert Emoji"
-            >
-              <Smile className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            </button>
-            <div className="absolute top-full left-0 mt-1 hidden group-hover:block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 shadow-lg z-10">
-              <div className="grid grid-cols-5 gap-1">
-                {['😊', '😂', '😍', '🤔', '👍', '👎', '❤️', '🎉', '🔥', '💯'].map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => insertEmoji(emoji)}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-lg"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Link Input */}
-      {showLinkInput && (
-        <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
-          <div className="flex items-center gap-2">
-            <input
-              type="url"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="Enter URL..."
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-              onKeyPress={(e) => e.key === 'Enter' && insertLink()}
-            />
-            <button
-              type="button"
-              onClick={insertLink}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              Insert
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowLinkInput(false)}
-              className="px-4 py-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Editor */}
+    return (
       <div
-        ref={editorRef}
-        contentEditable
-        className={`p-4 ${minHeight} focus:outline-none text-gray-900 dark:text-gray-100 leading-relaxed prose prose-sm max-w-none`}
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        style={{ minHeight: '200px' }}
-        suppressContentEditableWarning={true}
-        data-placeholder={placeholder}
-      />
-
-      <style jsx>{`
-        [contenteditable]:empty:before {
-          content: attr(data-placeholder);
-          color: #9ca3af;
-          pointer-events: none;
-        }
-        .dark [contenteditable]:empty:before {
-          color: #6b7280;
-        }
-      `}</style>
-    </div>
-  );
-};
+        className={`rich-text-editor border rounded-lg overflow-hidden ${
+          theme === 'dark'
+            ? 'border-gray-600 bg-gray-800'
+            : 'border-gray-300 bg-white'
+        }`}
+      >
+        <ReactQuill
+          ref={(node) => {
+            quillRef.current = node;
+            if (typeof ref === 'function') ref(node as ReactQuill);
+            else if (ref) (ref as React.MutableRefObject<ReactQuill | null>).current = node;
+          }}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          modules={modules}
+          formats={formats}
+          theme="snow"
+          className={containerClass}
+          style={{ minHeight: minHeightPx }}
+        />
+      </div>
+    );
+  },
+);
 
 export default RichTextEditor;
