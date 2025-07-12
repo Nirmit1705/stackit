@@ -5,9 +5,9 @@
 ## Team
 
 **Team Name:** Golden Quadrilateral  
-**Email IDs:**   
-23it048@charusat.edu.in  
-23it054@charusat.edu.in  
-23it081@charusat.edu.in  
-23it087@charusat.edu.in  
+**Team Members:**   
+Prem Kotadiya - 23it048@charusat.edu.in  
+Prajesh Majithiya - 23it054@charusat.edu.in  
+Jeel Vipulkumar Patel - 23it081@charusat.edu.in  
+Nirmit Patel - 23it087@charusat.edu.in (Team lead)  
 
