@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import AnswerCard from './AnswerCard';
 import RichTextEditor from './RichTextEditor';
-import Pagination from './Pagination';
 import { mockQuestions, mockUser } from '../data/mockData';
 import { Question, Answer } from '../types';
 
@@ -17,36 +16,7 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
   const question = mockQuestions.find(q => q.id === questionId);
   const [answers, setAnswers] = useState<Answer[]>(question?.answers || []);
   const [newAnswerContent, setNewAnswerContent] = useState('');
-  const [questionVote, setQuestionVote] = useState<'up' | 'down' | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [answersPerPage, setAnswersPerPage] = useState(3);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-  // Update answers per page based on screen size
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Adjust answers per page based on device size
-  useEffect(() => {
-    if (windowWidth < 640) { // Mobile
-      setAnswersPerPage(2);
-    } else if (windowWidth < 1024) { // Tablet
-      setAnswersPerPage(3);
-    } else { // Desktop
-      setAnswersPerPage(4);
-    }
-  }, [windowWidth]);
-
-  // Reset to first page when answers change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [answers.length]);
+  const [isQuestionUpvoted, setIsQuestionUpvoted] = useState(false);
 
   if (!question) {
     return (
@@ -92,34 +62,9 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
     console.log(`Vote ${type} on answer ${answerId}`);
   };
 
-  const handleQuestionVote = (voteType: 'up' | 'down') => {
+  const handleQuestionVote = () => {
     if (!user.isLoggedIn) return;
-    
-    if (questionVote === voteType) {
-      // If clicking the same vote, remove it
-      setQuestionVote(null);
-    } else {
-      // Set the new vote
-      setQuestionVote(voteType);
-    }
-  };
-
-  // Calculate vote count
-  const getVoteCount = () => {
-    let count = question.upvotes;
-    if (questionVote === 'up') count += 1;
-    if (questionVote === 'down') count -= 1;
-    return count;
-  };
-
-  // Pagination for answers
-  const totalPages = Math.ceil(answers.length / answersPerPage);
-  const startIndex = (currentPage - 1) * answersPerPage;
-  const endIndex = startIndex + answersPerPage;
-  const currentAnswers = answers.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setIsQuestionUpvoted(!isQuestionUpvoted);
   };
 
   return (
@@ -135,36 +80,23 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
         <div className="flex gap-6">
           {/* Question Voting */}
-          <div className="flex flex-col items-center space-y-1 flex-shrink-0">
+          <div className="flex flex-col items-center space-y-2 flex-shrink-0">
             <button
-              onClick={() => handleQuestionVote('up')}
+              onClick={handleQuestionVote}
               disabled={!user.isLoggedIn}
-              className={`p-2 rounded transition-colors ${
-                questionVote === 'up'
+              className={`p-3 rounded-full transition-colors ${
+                isQuestionUpvoted
                   ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
               } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
               title={user.isLoggedIn ? 'Upvote' : 'Login to vote'}
             >
-              <ArrowUp className="w-5 h-5" />
+              <ArrowUp className="w-6 h-6" />
             </button>
             
-            <span className="font-bold text-lg text-gray-900 dark:text-gray-100 py-1">
-              {getVoteCount()}
+            <span className="font-bold text-xl text-gray-900 dark:text-gray-100">
+              {question.upvotes + (isQuestionUpvoted ? 1 : 0)}
             </span>
-
-            <button
-              onClick={() => handleQuestionVote('down')}
-              disabled={!user.isLoggedIn}
-              className={`p-2 rounded transition-colors ${
-                questionVote === 'down'
-                  ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-              } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
-              title={user.isLoggedIn ? 'Downvote' : 'Login to vote'}
-            >
-              <ArrowDown className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Question Content */}
@@ -202,45 +134,48 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
         </div>
       </div>
 
+      {/* Downvote Button for Question */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-8">
+        <div className="flex items-center justify-center">
+          <button
+            onClick={() => {
+              if (user.isLoggedIn) {
+                // Handle downvote logic
+                console.log('Downvote question');
+              }
+            }}
+            disabled={!user.isLoggedIn}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              !user.isLoggedIn 
+                ? 'cursor-not-allowed opacity-50 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                : 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400'
+            }`}
+            title={user.isLoggedIn ? 'Downvote question' : 'Login to vote'}
+          >
+            <ArrowDown className="w-5 h-5" />
+            <span className="text-sm font-medium">Downvote Question</span>
+          </button>
+        </div>
+      </div>
+
       {/* Answers Section */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           {answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}
         </h2>
 
-        {answers.length > 0 ? (
-          <>
-            <div className="space-y-6">
-              {currentAnswers.map((answer) => (
-                <AnswerCard
-                  key={answer.id}
-                  answer={answer}
-                  isQuestionOwner={user.username === question.username}
-                  user={user}
-                  onAccept={handleAcceptAnswer}
-                  onVote={handleVoteAnswer}
-                />
-              ))}
-            </div>
-
-            {/* Pagination for Answers */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              totalItems={answers.length}
-              itemsPerPage={answersPerPage}
-              startIndex={startIndex}
-              endIndex={endIndex}
+        <div className="space-y-6">
+          {answers.map((answer) => (
+            <AnswerCard
+              key={answer.id}
+              answer={answer}
+              isQuestionOwner={user.username === question.username}
+              user={user}
+              onAccept={handleAcceptAnswer}
+              onVote={handleVoteAnswer}
             />
-          </>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400">
-              No answers yet. Be the first to answer this question!
-            </p>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
       {/* Answer Form */}
@@ -253,7 +188,7 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
               value={newAnswerContent}
               onChange={setNewAnswerContent}
               placeholder="Write your answer here. Be specific and helpful."
-              minHeight="min-h-48"
+              minHeightPx={192}
             />
 
             <div className="flex justify-end">
