@@ -3,7 +3,8 @@ import { Question, Notification, User } from '../types';
 export const mockUser: User = {
   username: 'john_doe',
   avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-  isLoggedIn: true
+  isLoggedIn: true,
+  role: 'user'
 };
 
 export const mockQuestions: Question[] = [

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Menu, X, Sun, Moon, Plus } from 'lucide-react';
+import { Search, Bell, Menu, X, Sun, Moon, Plus, Settings } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { mockUser, mockNotifications } from '../data/mockData';
 import NotificationsDropdown from './NotificationsDropdown';
@@ -13,14 +13,16 @@ interface HeaderProps {
   onLogin: (username: string, password: string) => void;
   onSignup: (username: string, email: string, password: string) => void;
   onLogout: () => void;
+  onRoleChange: (role: 'user' | 'admin') => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin, onSignup, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin, onSignup, onLogout, onRoleChange }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(mockNotifications);
 
@@ -36,6 +38,12 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
       setIsProfileModalOpen(false);
     }
   }, [user.isLoggedIn]);
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRole = e.target.value as 'user' | 'admin';
+    onRoleChange(newRole);
+    setShowRoleSelector(false);
+  };
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -115,6 +123,30 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
                 )}
               </div>
             )}
+
+            {/* Role Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowRoleSelector(!showRoleSelector)}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                title="Change Role"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+              
+              {showRoleSelector && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                  <select
+                    value={user.role}
+                    onChange={handleRoleChange}
+                    className="w-full px-4 py-2 text-gray-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              )}
+            </div>
 
             {/* User Avatar */}
             {user.isLoggedIn ? (

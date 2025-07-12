@@ -11,7 +11,8 @@ function App() {
   const [user, setUser] = useState({
     username: '',
     avatar: '',
-    isLoggedIn: false
+    isLoggedIn: false,
+    role: 'user' as 'user' | 'admin'
   });
 
   const handleNavigate = (page: string) => {
@@ -27,20 +28,20 @@ function App() {
   };
 
   const handleLogin = (username: string, password: string) => {
-    // Simulate login - in real app, this would call an API
     setUser({
       username,
       avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      isLoggedIn: true
+      isLoggedIn: true,
+      role: user.role // Preserve existing role
     });
   };
 
   const handleSignup = (username: string, email: string, password: string) => {
-    // Simulate signup - in real app, this would call an API
     setUser({
       username,
       avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&dpr=2',
-      isLoggedIn: true
+      isLoggedIn: true,
+      role: user.role // Preserve existing role
     });
   };
 
@@ -48,13 +49,16 @@ function App() {
     setUser({
       username: '',
       avatar: '',
-      isLoggedIn: false
+      isLoggedIn: false,
+      role: 'user' // Reset to default role
     });
   };
 
-  const handleVoteQuestion = (questionId: string, type: 'up' | 'down') => {
-    // Handle question voting logic
-    console.log(`Vote ${type} on question ${questionId}`);
+  const handleRoleChange = (role: 'user' | 'admin') => {
+    setUser(prev => ({
+      ...prev,
+      role: role
+    }));
   };
 
   const renderCurrentPage = () => {
@@ -64,7 +68,6 @@ function App() {
           <HomePage 
             onNavigate={handleNavigate}
             onNavigateToQuestion={handleNavigateToQuestion}
-            onVoteQuestion={handleVoteQuestion}
             user={user}
           />
         );
@@ -81,7 +84,6 @@ function App() {
           <HomePage 
             onNavigate={handleNavigate}
             onNavigateToQuestion={handleNavigateToQuestion}
-            onVoteQuestion={handleVoteQuestion}
             user={user}
           />
         );
@@ -90,7 +92,6 @@ function App() {
           <HomePage 
             onNavigate={handleNavigate}
             onNavigateToQuestion={handleNavigateToQuestion}
-            onVoteQuestion={handleVoteQuestion}
             user={user}
           />
         );
@@ -107,6 +108,7 @@ function App() {
           onLogin={handleLogin}
           onSignup={handleSignup}
           onLogout={handleLogout}
+          onRoleChange={handleRoleChange}
         />
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

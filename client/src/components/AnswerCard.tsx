@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUp, ArrowDown, Check } from 'lucide-react';
+import { ArrowUp, ArrowDown, Check, Trash2 } from 'lucide-react';
 import { Answer } from '../types';
 import { mockUser } from '../data/mockData';
 
@@ -9,10 +9,19 @@ interface AnswerCardProps {
   user: any;
   onAccept: (answerId: string) => void;
   onVote: (answerId: string, type: 'up' | 'down') => void;
+  onDelete?: (answerId: string) => void;  // Add this prop
   onRequireLogin?: () => void;
 }
 
-const AnswerCard: React.FC<AnswerCardProps> = ({ answer, isQuestionOwner, user, onAccept, onVote, onRequireLogin }) => {
+const AnswerCard: React.FC<AnswerCardProps> = ({ 
+  answer, 
+  isQuestionOwner, 
+  user, 
+  onAccept, 
+  onVote, 
+  onDelete,  // Add this prop
+  onRequireLogin 
+}) => {
   const [isUserUpvoted, setIsUserUpvoted] = useState(answer.isUserUpvoted || false);
   const [isUserDownvoted, setIsUserDownvoted] = useState(answer.isUserDownvoted || false);
 
@@ -32,9 +41,21 @@ const AnswerCard: React.FC<AnswerCardProps> = ({ answer, isQuestionOwner, user, 
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 ${
+    <div className={`relative group bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 ${
       answer.isAccepted ? 'border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-700'
     }`}>
+      {/* Replace the admin delete button with a more visible version */}
+      {user.role === 'admin' && (
+        <button
+          onClick={() => onDelete && onDelete(answer.id)}
+          className="absolute top-3 right-3 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg flex items-center gap-2 transition-colors group-hover:opacity-100 opacity-0"
+          title="Delete answer"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="text-sm font-medium">Delete</span>
+        </button>
+      )}
+      
       <div className="flex gap-4">
         {/* Voting Section */}
         <div className="flex flex-col items-center space-y-2 flex-shrink-0">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import AnswerCard from './AnswerCard';
 import RichTextEditor from './RichTextEditor';
@@ -16,7 +16,6 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
   const question = mockQuestions.find(q => q.id === questionId);
   const [answers, setAnswers] = useState<Answer[]>(question?.answers || []);
   const [newAnswerContent, setNewAnswerContent] = useState('');
-  const [isQuestionUpvoted, setIsQuestionUpvoted] = useState(false);
 
   if (!question) {
     return (
@@ -62,9 +61,8 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
     console.log(`Vote ${type} on answer ${answerId}`);
   };
 
-  const handleQuestionVote = () => {
-    if (!user.isLoggedIn) return;
-    setIsQuestionUpvoted(!isQuestionUpvoted);
+  const handleDeleteAnswer = (answerId: string) => {
+    setAnswers(answers.filter(answer => answer.id !== answerId));
   };
 
   return (
@@ -79,26 +77,6 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
       {/* Question Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
         <div className="flex gap-6">
-          {/* Question Voting */}
-          <div className="flex flex-col items-center space-y-2 flex-shrink-0">
-            <button
-              onClick={handleQuestionVote}
-              disabled={!user.isLoggedIn}
-              className={`p-3 rounded-full transition-colors ${
-                isQuestionUpvoted
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-              } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
-              title={user.isLoggedIn ? 'Upvote' : 'Login to vote'}
-            >
-              <ArrowUp className="w-6 h-6" />
-            </button>
-            
-            <span className="font-bold text-xl text-gray-900 dark:text-gray-100">
-              {question.upvotes + (isQuestionUpvoted ? 1 : 0)}
-            </span>
-          </div>
-
           {/* Question Content */}
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
@@ -134,30 +112,6 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
         </div>
       </div>
 
-      {/* Downvote Button for Question */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-8">
-        <div className="flex items-center justify-center">
-          <button
-            onClick={() => {
-              if (user.isLoggedIn) {
-                // Handle downvote logic
-                console.log('Downvote question');
-              }
-            }}
-            disabled={!user.isLoggedIn}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              !user.isLoggedIn 
-                ? 'cursor-not-allowed opacity-50 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                : 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400'
-            }`}
-            title={user.isLoggedIn ? 'Downvote question' : 'Login to vote'}
-          >
-            <ArrowDown className="w-5 h-5" />
-            <span className="text-sm font-medium">Downvote Question</span>
-          </button>
-        </div>
-      </div>
-
       {/* Answers Section */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
@@ -173,6 +127,7 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
               user={user}
               onAccept={handleAcceptAnswer}
               onVote={handleVoteAnswer}
+              onDelete={handleDeleteAnswer}
             />
           ))}
         </div>

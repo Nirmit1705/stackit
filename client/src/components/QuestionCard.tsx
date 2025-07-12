@@ -1,24 +1,40 @@
 import React from 'react';
+import { Trash2 } from 'lucide-react';
 import { Question } from '../types';
 
 interface QuestionCardProps {
   question: Question;
   onClick: () => void;
-  onVote: (questionId: string, type: 'up' | 'down') => void;
   user: any;
+  onDelete?: (questionId: string) => void;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick }) => {
+const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick, user, onDelete }) => {
   const truncateText = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
   };
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) onDelete(question.id);
+  };
+
   return (
     <div
-      className="relative bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-400 border-t border-r border-b border-gray-200 dark:border-gray-700 px-4 sm:px-7 py-4 sm:py-5 mb-6 sm:mb-7 flex flex-col transition-all duration-200 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer"
+      className="relative bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-400 border-t border-r border-b border-gray-200 dark:border-gray-700 px-4 sm:px-7 py-4 sm:py-5 mb-6 sm:mb-7 flex flex-col transition-all duration-200 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer group"
       onClick={onClick}
     >
+      {user.role === 'admin' && (
+        <button
+          onClick={handleDelete}
+          className="absolute top-3 right-3 p-1.5 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Delete question"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+
       {/* Top: Title, then Answer Count (stacked on mobile) */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
         <div className="flex flex-col flex-1 min-w-0">

@@ -35,4 +35,5 @@ export interface User {
   username: string;
   avatar: string;
   isLoggedIn: boolean;
+  role: 'user' | 'admin';  // Add this line
 }

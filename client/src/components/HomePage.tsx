@@ -8,12 +8,11 @@ import { Question } from '../types';
 interface HomePageProps {
   onNavigate: (page: string) => void;
   onNavigateToQuestion: (questionId: string) => void;
-  onVoteQuestion: (questionId: string, type: 'up' | 'down') => void;
   user: any;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, onVoteQuestion, user }) => {
-  const [questions] = useState<Question[]>(mockQuestions);
+const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, user }) => {
+  const [questions, setQuestions] = useState<Question[]>(mockQuestions);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState('Newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,12 +58,9 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, o
       case 'Unanswered':
         result = result.filter(q => q.answers.length === 0);
         break;
-      case 'Most Voted':
-        result = [...result].sort((a, b) => b.upvotes - a.upvotes);
-        break;
       case 'Newest':
       default:
-        // Assuming mock data is already ordered by newest first.
+        // Assuming mock data is already ordered by newest first
         break;
     }
 
@@ -83,6 +79,12 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, o
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleDeleteQuestion = (questionId: string) => {
+    // In a real app, this would call an API
+    const updatedQuestions = questions.filter(q => q.id !== questionId);
+    setQuestions(updatedQuestions);
   };
 
   return (
@@ -106,7 +108,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, o
         >
           <option>Newest</option>
           <option>Unanswered</option>
-          <option>Most Voted</option>
         </select>
 
         {/* Search */}
@@ -128,8 +129,8 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onNavigateToQuestion, o
             key={question.id}
             question={question}
             onClick={() => onNavigateToQuestion(question.id)}
-            onVote={onVoteQuestion}
             user={user}
+            onDelete={handleDeleteQuestion}  // Add this prop
           />
         ))}
       </div>
