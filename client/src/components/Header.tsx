@@ -79,12 +79,12 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Row: Logo and Login */}
         <div className="flex items-center justify-between h-14">
-          <span className="text-3xl font-handwritten font-bold text-gray-800 dark:text-gray-100 select-none tracking-tight">
+          <span className="text-3xl font-handwritten font-bold text-blue-600 dark:text-blue-400 select-none tracking-tight">
             StackIt
           </span>
           <button
             onClick={() => setIsAuthModalOpen(true)}
-            className="border-2 border-gray-700 rounded-full px-6 py-1 text-gray-800 dark:text-gray-100 font-medium bg-white hover:bg-gray-100 transition-colors text-base shadow-sm"
+            className="border-2 border-blue-600 rounded-full px-6 py-1 text-blue-600 dark:text-blue-400 font-medium bg-white hover:bg-blue-50 transition-colors text-base shadow-sm"
             style={{ fontFamily: 'inherit' }}
           >
             Login
