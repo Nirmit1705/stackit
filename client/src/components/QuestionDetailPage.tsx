@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import AnswerCard from './AnswerCard';
 import RichTextEditor from './RichTextEditor';
+import Pagination from './Pagination';
 import { mockQuestions, mockUser } from '../data/mockData';
 import { Question, Answer } from '../types';
 
@@ -17,6 +18,35 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
   const [answers, setAnswers] = useState<Answer[]>(question?.answers || []);
   const [newAnswerContent, setNewAnswerContent] = useState('');
   const [isQuestionUpvoted, setIsQuestionUpvoted] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [answersPerPage, setAnswersPerPage] = useState(3);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  // Update answers per page based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Adjust answers per page based on device size
+  useEffect(() => {
+    if (windowWidth < 640) { // Mobile
+      setAnswersPerPage(2);
+    } else if (windowWidth < 1024) { // Tablet
+      setAnswersPerPage(3);
+    } else { // Desktop
+      setAnswersPerPage(4);
+    }
+  }, [windowWidth]);
+
+  // Reset to first page when answers change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [answers.length]);
 
   if (!question) {
     return (
@@ -65,6 +95,16 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
   const handleQuestionVote = () => {
     if (!user.isLoggedIn) return;
     setIsQuestionUpvoted(!isQuestionUpvoted);
+  };
+
+  // Pagination for answers
+  const totalPages = Math.ceil(answers.length / answersPerPage);
+  const startIndex = (currentPage - 1) * answersPerPage;
+  const endIndex = startIndex + answersPerPage;
+  const currentAnswers = answers.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -164,18 +204,39 @@ const QuestionDetailPage: React.FC<QuestionDetailPageProps> = ({ questionId, onN
           {answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}
         </h2>
 
-        <div className="space-y-6">
-          {answers.map((answer) => (
-            <AnswerCard
-              key={answer.id}
-              answer={answer}
-              isQuestionOwner={user.username === question.username}
-              user={user}
-              onAccept={handleAcceptAnswer}
-              onVote={handleVoteAnswer}
+        {answers.length > 0 ? (
+          <>
+            <div className="space-y-6">
+              {currentAnswers.map((answer) => (
+                <AnswerCard
+                  key={answer.id}
+                  answer={answer}
+                  isQuestionOwner={user.username === question.username}
+                  user={user}
+                  onAccept={handleAcceptAnswer}
+                  onVote={handleVoteAnswer}
+                />
+              ))}
+            </div>
+
+            {/* Pagination for Answers */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              totalItems={answers.length}
+              itemsPerPage={answersPerPage}
+              startIndex={startIndex}
+              endIndex={endIndex}
             />
-          ))}
-        </div>
+          </>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p className="text-gray-600 dark:text-gray-400">
+              No answers yet. Be the first to answer this question!
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Answer Form */}

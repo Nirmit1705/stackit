@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { mockQuestions } from '../data/mockData';
 import QuestionCard from './QuestionCard';
+import Pagination from './Pagination';
 import { Question } from '../types';
 
 interface HomePageProps {
@@ -12,22 +13,43 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ onNavigateToQuestion, onVoteQuestion, user }) => {
   const [questions] = useState<Question[]>(mockQuestions);
   const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 5;
+  const [questionsPerPage, setQuestionsPerPage] = useState(5);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  // Update questions per page based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Adjust questions per page based on device size
+  useEffect(() => {
+    if (windowWidth < 640) { // Mobile
+      setQuestionsPerPage(3);
+    } else if (windowWidth < 1024) { // Tablet
+      setQuestionsPerPage(4);
+    } else { // Desktop
+      setQuestionsPerPage(5);
+    }
+  }, [windowWidth]);
 
   const totalPages = Math.ceil(questions.length / questionsPerPage);
   const startIndex = (currentPage - 1) * questionsPerPage;
   const endIndex = startIndex + questionsPerPage;
   const currentQuestions = questions.slice(startIndex, endIndex);
 
-  const goToPage = (page: number) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       {/* Questions List */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {currentQuestions.map((question) => (
           <QuestionCard
             key={question.id}
@@ -39,40 +61,16 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigateToQuestion, onVoteQuestio
         ))}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-2 mt-12">
-          <button
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Previous
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => goToPage(page)}
-              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      {/* Responsive Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        totalItems={questions.length}
+        itemsPerPage={questionsPerPage}
+        startIndex={startIndex}
+        endIndex={endIndex}
+      />
     </div>
   );
 };
