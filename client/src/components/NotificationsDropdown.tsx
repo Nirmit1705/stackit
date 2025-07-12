@@ -5,9 +5,10 @@ import { Notification } from '../types';
 interface NotificationsDropdownProps {
   notifications: Notification[];
   onClose: () => void;
+  onMarkAllAsRead: () => void;
 }
 
-const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notifications, onClose }) => {
+const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notifications, onClose, onMarkAllAsRead }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,7 +80,10 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notificat
       
       {notifications.length > 0 && (
         <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-          <button className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+          <button
+            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            onClick={onMarkAllAsRead}
+          >
             Mark all as read
           </button>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Bell, Menu, X, Sun, Moon, Plus } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { mockUser, mockNotifications } from '../data/mockData';
@@ -22,8 +22,20 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { theme, toggleTheme } = useTheme();
+  const [notifications, setNotifications] = useState(mockNotifications);
 
-  const unreadCount = mockNotifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+  };
+
+  useEffect(() => {
+    if (!user.isLoggedIn) {
+      setIsNotificationsOpen(false);
+      setIsProfileModalOpen(false);
+    }
+  }, [user.isLoggedIn]);
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -81,26 +93,28 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
             </button>
 
             {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadCount}
-                  </span>
+            {user.isLoggedIn && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                {isNotificationsOpen && (
+                  <NotificationsDropdown
+                    notifications={notifications}
+                    onClose={() => setIsNotificationsOpen(false)}
+                    onMarkAllAsRead={handleMarkAllAsRead}
+                  />
                 )}
-              </button>
-              
-              {isNotificationsOpen && (
-                <NotificationsDropdown
-                  notifications={mockNotifications}
-                  onClose={() => setIsNotificationsOpen(false)}
-                />
-              )}
-            </div>
+              </div>
+            )}
 
             {/* User Avatar */}
             {user.isLoggedIn ? (
@@ -160,19 +174,22 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, user, onLogin,
                     {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                   </button>
 
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                      className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                    >
-                      <Bell className="w-5 h-5" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </button>
-                  </div>
+                  {/* Notifications (Mobile) */}
+                  {user.isLoggedIn && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                        className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                      >
+                        <Bell className="w-5 h-5" />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  )}
 
                   {user.isLoggedIn ? (
                     <button
