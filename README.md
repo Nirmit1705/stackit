@@ -11,6 +11,9 @@ Prajesh Majithiya - 23it054@charusat.edu.in
 Jeel Vipulkumar Patel - 23it081@charusat.edu.in  
 Nirmit Patel - 23it087@charusat.edu.in (Team lead)
 
+**Video Link**
+https://drive.google.com/file/d/1vmKYrYhECoLrEjNrtwNJc5XWDhKbC_sa/view?usp=sharing
+
 ## Features
 
 ### Core Features
