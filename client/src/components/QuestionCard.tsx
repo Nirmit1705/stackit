@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUp, ArrowDown, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { Question } from '../types';
 
 interface QuestionCardProps {
@@ -9,95 +9,58 @@ interface QuestionCardProps {
   user: any;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick, onVote, user }) => {
+const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick }) => {
   const truncateText = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
   };
 
-  const handleVote = (e: React.MouseEvent, type: 'up' | 'down') => {
-    e.stopPropagation();
-    if (user.isLoggedIn) {
-      onVote(question.id, type);
-    }
-  };
-
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer"
+      className="relative bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-blue-400 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700 px-4 sm:px-7 py-4 sm:py-5 mb-6 sm:mb-7 flex flex-col transition-all duration-200 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer"
+      onClick={onClick}
     >
-      <div className="flex gap-4">
-        {/* Voting Section */}
-        <div className="flex flex-col items-center space-y-1 flex-shrink-0">
-          <button
-            onClick={(e) => handleVote(e, 'up')}
-            disabled={!user.isLoggedIn}
-            className={`p-1 rounded-full transition-colors ${
-              question.isUserUpvoted
-                ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-            } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
-            title={user.isLoggedIn ? 'Upvote' : 'Login to vote'}
-          >
-            <ArrowUp className="w-4 h-4" />
-          </button>
-          
-          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-            {question.upvotes}
-          </span>
-          
-          <button
-            onClick={(e) => handleVote(e, 'down')}
-            disabled={!user.isLoggedIn}
-            className={`p-1 rounded-full transition-colors ${
-              question.isUserDownvoted
-                ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-            } ${!user.isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
-            title={user.isLoggedIn ? 'Downvote' : 'Login to vote'}
-          >
-            <ArrowDown className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Question Content */}
-        <div className="flex-1" onClick={onClick}>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+      {/* Top: Title, then Answer Count (stacked on mobile) */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
+        <div className="flex flex-col flex-1 min-w-0">
+          <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 tracking-tight break-words">
             {question.title}
           </h3>
-      
-          <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-            {truncateText(question.description, 150)}
-          </p>
-      
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {question.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-full font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-      
-          {/* Footer */}
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <MessageCircle className="w-4 h-4" />
-                <span>{question.answers.length}</span>
-              </div>
-            </div>
-          
-            <div className="flex items-center space-x-2">
-              <span className="font-medium text-gray-700 dark:text-gray-300">{question.username}</span>
-              <span>•</span>
-              <span>{question.timestamp}</span>
-            </div>
+          {/* On mobile, answer badge below title */}
+          <div className="flex sm:hidden mt-1">
+            <span className="rounded-xl border-2 border-blue-300 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 px-3 py-1 text-sm font-semibold shadow-sm whitespace-nowrap">
+              {question.answers.length} ans
+            </span>
           </div>
         </div>
+        {/* On desktop, answer badge right-aligned */}
+        <div className="hidden sm:flex items-center sm:ml-4">
+          <span className="rounded-xl border-2 border-blue-300 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 px-4 py-1 text-base font-semibold shadow-sm whitespace-nowrap">
+            {question.answers.length} ans
+          </span>
+        </div>
+      </div>
+      {/* Tags, then Description (stacked on mobile) */}
+      <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-5 mt-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-1 sm:mb-2 w-full sm:w-auto">
+          {question.tags.slice(0, 3).map((tag, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 border border-blue-200 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 text-xs rounded-lg font-semibold shadow-sm"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        <div className="flex-1 min-w-0 w-full mt-1 sm:mt-0">
+          <p className="text-gray-700 dark:text-gray-200 text-sm sm:text-base leading-relaxed font-medium break-words">
+            {truncateText(question.description, 180)}
+          </p>
+        </div>
+      </div>
+      {/* Bottom Row: Username */}
+      <div className="mt-2 text-gray-500 dark:text-gray-400 text-sm sm:text-base font-semibold">
+        {question.username}
       </div>
     </div>
   );
